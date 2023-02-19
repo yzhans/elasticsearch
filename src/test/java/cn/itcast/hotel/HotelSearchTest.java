@@ -89,7 +89,7 @@ public class HotelSearchTest {
 
         for (SearchHit hit : searchHits) {
             String s = hit.getSourceAsString();
-            System.out.println("s = " + s);
+            System.out.println(s);
         }
     }
 
