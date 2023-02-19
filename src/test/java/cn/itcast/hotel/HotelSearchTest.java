@@ -23,17 +23,21 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @SpringBootTest
@@ -55,6 +59,15 @@ public class HotelSearchTest {
     void testMatchAll() throws IOException {
         SearchRequest request = new SearchRequest("hotel");
         request.source().query(QueryBuilders.matchAllQuery());
+        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        handleResponse(search);
+    }
+
+    @Test
+    void testHighlight() throws IOException {
+        SearchRequest request = new SearchRequest("hotel");
+        request.source().query(QueryBuilders.matchQuery("all", "如家"));
+        request.source().highlighter(new HighlightBuilder().field("name").requireFieldMatch(false));
         SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
         handleResponse(search);
     }
@@ -89,7 +102,17 @@ public class HotelSearchTest {
 
         for (SearchHit hit : searchHits) {
             String s = hit.getSourceAsString();
-            System.out.println(s);
+
+            HotelDoc hotelDoc = JSON.parseObject(s, HotelDoc.class);
+            Map<String, HighlightField> highlightFields = hit.getHighlightFields();
+            if (!CollectionUtils.isEmpty(highlightFields)) {
+                HighlightField highlightField = highlightFields.get("name");
+                if (highlightField != null) {
+                    String string = highlightField.getFragments()[0].toString();
+                    hotelDoc.setName(string);
+                }
+            }
+            System.out.println(hotelDoc);
         }
     }
 
