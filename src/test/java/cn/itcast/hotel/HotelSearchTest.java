@@ -23,6 +23,7 @@ import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.sort.SortOrder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,11 +60,21 @@ public class HotelSearchTest {
     }
 
     @Test
-    void testbool() throws IOException {
+    void testBool() throws IOException {
         SearchRequest request = new SearchRequest("hotel");
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
         boolQuery.must(QueryBuilders.termQuery("city", "上海"));
         request.source().query(boolQuery);
+        SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        handleResponse(search);
+    }
+
+    @Test
+    void testPageAndSort() throws IOException {
+        SearchRequest request = new SearchRequest("hotel");
+        request.source().query(QueryBuilders.matchAllQuery());
+        request.source().sort("price", SortOrder.DESC);
+        request.source().from(0).size(5);
         SearchResponse search = restHighLevelClient.search(request, RequestOptions.DEFAULT);
         handleResponse(search);
     }
