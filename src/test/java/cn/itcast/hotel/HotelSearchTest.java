@@ -26,6 +26,10 @@ import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
+import org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.search.suggest.SuggestBuilder;
+import org.elasticsearch.search.suggest.SuggestBuilders;
+import org.elasticsearch.search.suggest.completion.CompletionSuggestion;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -113,6 +117,25 @@ public class HotelSearchTest {
                 }
             }
             System.out.println(hotelDoc);
+        }
+    }
+
+    @Test
+    void testSuggest() throws IOException {
+        SearchRequest request = new SearchRequest("hotel");
+        request.source().suggest(new SuggestBuilder().addSuggestion(
+                "suggestions",
+                SuggestBuilders.completionSuggestion("suggestion")
+                        .prefix("hz")
+                        .skipDuplicates(true)
+                        .size(10)
+        ));
+        SearchResponse response = restHighLevelClient.search(request, RequestOptions.DEFAULT);
+        Suggest suggest = response.getSuggest();
+        CompletionSuggestion suggestions = suggest.getSuggestion("suggestions");
+        for (CompletionSuggestion.Entry.Option option : suggestions.getOptions()) {
+            String text = option.getText().toString();
+            System.out.println(text);
         }
     }
 
